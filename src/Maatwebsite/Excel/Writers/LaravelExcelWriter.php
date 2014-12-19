@@ -1,11 +1,13 @@
 <?php namespace Maatwebsite\Excel\Writers;
 
 use Closure;
+use Event;
 use Carbon\Carbon;
 use PHPExcel_IOFactory;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Classes\FormatIdentifier;
 use Maatwebsite\Excel\Classes\LaravelExcelWorksheet;
 use Maatwebsite\Excel\Exceptions\LaravelExcelException;
@@ -288,8 +290,7 @@ class LaravelExcelWriter {
      */
     protected function _download()
     {
-        // Set the headers
-        $this->_setHeaders(array(
+        $headers = new Collection(array(
 
             'Content-Type'        => $this->contentType,
             'Content-Disposition' => 'attachment; filename="' . $this->filename . '.' . $this->ext . '"',
@@ -299,6 +300,11 @@ class LaravelExcelWriter {
             'Pragma'              => 'public'
 
         ));
+
+        Event::fire( 'excel.headers', [$headers] );
+
+        // Set the headers
+        $this->_setHeaders( $headers->toArray() );
 
         // Check if writer isset
         if (!$this->writer)
